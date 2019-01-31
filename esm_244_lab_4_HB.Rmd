@@ -1,0 +1,35 @@
+---
+title: "ESM 244 Lab 4"
+author: "Hanna Buechi"
+date: "1/30/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Lab Week 4:
+
+- Nonlinear least squares
+- Panel regression level 0 example
+- Shiny example with navbarPage
+
+###Part 0. Load packages
+```{r}
+library(tidyverse)
+library(Ecdat)
+library(plm)
+library(lmtest)
+library(car) #for plotting
+```
+
+###Part 1. Nonlinear least squares (logistic growth fitting)
+
+a. Load dataset CellGrowth.csv. Create a scatterplot.
+
+```{r get_data}
+
+CellGrowth <- read_csv("CellGrowth.csv")
+
+```
