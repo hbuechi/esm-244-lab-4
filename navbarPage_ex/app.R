@@ -9,9 +9,9 @@ ui <- fluidPage(
   # Application title
   titlePanel("244 Example: Old Faithful Geyser Data"),
   
-   navbarPage("Here's a main title!",
+   navbarPage("Here's a main title!", # creates navigation bar with tabs that contain separate widgets
              
-             tabPanel("Summary",
+             tabPanel("Summary", # summary to help user explain why this is important and how to use it
                       h1("A header!"),
                       h2("A secondary header..."),
                       p("Then some paragraph text. Old Faithful Geyser Data Description: Waiting time between eruptions and the duration of the eruption for the Old Faithful geyser in Yellowstone National Park, Wyoming, USA."),
@@ -19,14 +19,14 @@ ui <- fluidPage(
                       h1("Then another header"),
                       p("You get the idea...)")
                       
-                      ),
+                      ), # all within navbarPage and fluidPage
              
              tabPanel("Histogram",
                       
                       # Sidebar with a slider input for number of bins 
                       sidebarLayout(
                         sidebarPanel(
-                          sliderInput("bins",
+                          sliderInput("bins", # these widgets interact with a plot called "distPlot" (below)
                                       "Number of bins:",
                                       min = 1,
                                       max = 50,
@@ -44,7 +44,7 @@ ui <- fluidPage(
                       )),
              
              
-             tabPanel("Scatterplot",
+             tabPanel("Scatterplot", # another panel
                       
                       # Sidebar with a slider input for number of bins 
                       sidebarLayout(
