@@ -177,6 +177,8 @@ et_cigs_model
 pFtest(et_cigs_model, cigs_model) # "more complete" model comes first
 # reject the null hypothesis! p = 7.835e-10
 
+# cool stuff!
+
 ```
 
 
