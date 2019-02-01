@@ -1,5 +1,5 @@
 ---
-title: "ESM 244 Lab 4"
+title: "ESM 244 Lab 4: Nonlinear Regression"
 author: "Hanna Buechi"
 date: "1/30/2019"
 output: html_document
@@ -28,8 +28,168 @@ library(car) #for plotting
 
 a. Load dataset CellGrowth.csv. Create a scatterplot.
 
-```{r get_data}
+```{r data_coefficients}
 
 CellGrowth <- read_csv("CellGrowth.csv")
 
+# Look at it
+
+ggplot(CellGrowth, aes(x = Time, y = CellCount)) +
+  geom_point()
+
+# non-linear: Nt = A / (1 + Be^-(rt)), B = (K-N0)/N0 --> R will help us find A, B, and r parameters via Gauss-Newton convergence
+
+# Predictor = time, outcome = cell count
+# Find estimates for logistic growth
+# Looking at ggplot, K = 3,700
+# N0 = 2000
+
+BEstimate <- (3700-2000)/2000
+
+# estimate r: isolate explonential phase of growth, transform to semi-log plot (ln(y) and t plotted), slope of line is r --> 0 - 4 hrs based on ggplot
+
+# Now we are going to estimate r (the growth rate)
+
+lag_phase <- CellGrowth %>% 
+  filter(Time < 4)
+
+# ln(y) = rt
+
+ggplot(lag_phase, aes(x = Time, y = log(CellCount))) +
+  geom_point()
+
+lm(log(CellCount) ~ Time, data = lag_phase)
+
+# r = 0.1121
+
 ```
+
+Find model A, B, and r using Gauss-Newton method for iterative convergence (non linear least squares):
+
+Use the nls() function:
+
+```{r}
+
+cell_fit <- nls(CellCount ~ A/(1 + B*exp(-r*Time)),
+                start = list(A = 3700, B = 0.85, r = 0.1121),
+                data = CellGrowth,
+                trace = TRUE) # trace back how R got these values
+
+# values on the left are sq. residuals associated with the model until convergence
+
+cell_fit
+
+# Achieved convergence tolerance: 6.512e-06 --> residuals would only change by this factor if R tried again
+
+# Store coefficients to be able to plot
+A <- coef(cell_fit)[1] # first coefficient reported in cell_fit model is A
+B <- coef(cell_fit)[2]
+r <- coef(cell_fit)[3]
+
+# Create a new sequence of values
+time_seq <- seq(0,20,length = 100) # sequence of 1 to 20 with 100 increments
+
+# Plug that new sequence into my model with the paragmeters A, B, and r that we found:
+
+cell_pred <- A/(1+B*exp(-r*time_seq))
+
+# Bind that together with the time series data for plotting:
+pred_df <- data.frame(time_seq, cell_pred)
+
+# Create a graph with original data and our model predictions:
+ggplot(CellGrowth, aes(x = Time, y = CellCount)) +
+  geom_point(color = "blue", size = 3) +
+  geom_line(data = pred_df, aes(x = time_seq, y = cell_pred), color = "orange", size = 1)
+
+# Watch Miles McVain's talk about magic in R
+
+```
+
+Panel Regression - First Shot
+
+What is the effect of cigarette price on cigarette purchases?
+
+State: our entity variables
+Year: our time variable
+packpc (pack per cap): our dependent variable
+avgprs (average price): our predictor variable of interest
+
+```{r wranlge}
+
+cigs_panel <- Cigarette %>% 
+  select(state, year, packpc, avgprs)
+
+ggplot(cigs_panel, aes(x = avgprs, y = packpc, group = state)) +
+  geom_point(aes(color = state)) +
+  geom_smooth(method = "lm", aes(color = state), se = FALSE, size = 0.2) # se = FALSE excludes SE of lm
+
+# overall across states, avg price affects pack purchases in similar ways
+
+# What's happening over time?
+
+ggplot(cigs_panel, aes(x = year, y = packpc, group = state)) +
+  geom_point(aes(color = state)) +
+  geom_smooth(method = "lm", aes(color = state), se = FALSE, size = 0.2)
+
+# Trend through time is consistent, too
+
+```
+
+Entity fixed effects model:
+
+```{r}
+
+cigs_model <- plm(packpc ~ avgprs,
+                  data = cigs_panel,
+                  index = c("state","year"),
+                  model = "within") # entity fixed effects model
+
+cigs_model # the only coefficient shows up is the price one - this is interpreted the same way as for linear model coefficients: "if all else is held equal, or taking entity fixed effects into account, the number of packs bought decreases by 0.33 for every dollar increase in price"
+
+
+# robust standard error
+
+coeftest(cigs_model, vcov. = vcovHC(cigs_model, type = "HC1")) # variables are correlated with each other, error associated
+
+# coefficient has changed a little bit and standard error is larger
+# SE: 0.012974
+```
+
+
+Add time fixed effects:
+
+```{r}
+
+# same code as cigs_model
+
+et_cigs_model <- plm(packpc ~ avgprs,
+                  data = cigs_panel,
+                  index = c("state","year"),
+                  model = "within", # still have entity fixed effects
+                  effect = "twoways") # time fixed effects
+
+et_cigs_model
+
+# coefficient is a little larger
+# but has this improved the model
+# pFtest compares models with null hypothesis that model is not improved adding time fixed effects
+
+pFtest(et_cigs_model, cigs_model) # "more complete" model comes first
+# reject the null hypothesis! p = 7.835e-10
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
